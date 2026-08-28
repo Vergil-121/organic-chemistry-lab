@@ -1094,6 +1094,7 @@ main{padding:18px 22px 34px;max-width:1500px;margin:0 auto}
         <p>操作方式：</p>
         <ul>
           <li>选中原子工具后点击画布空白处放置原子；选中一个原子后，再点另一个原子会自动按当前键级连键，画布上会显示连接预览。</li>
+          <li>原子会自动吸附到网格上，方便对齐和点选。</li>
           <li>选中键工具后点已存在的键，可把键升级为当前键级（单键、双键、三键）。</li>
           <li>移动工具可拖动原子；擦除工具点击原子或键可删除；撤销和清空按钮随时可用。</li>
           <li>点击“检查”会依次校验价态、原子数量、连接方式；状态栏会给出具体提示。</li>
@@ -1809,6 +1810,8 @@ const builder={
   errors:0
 };
 let nodeUid=1, edgeUid=1;
+const SNAP_GRID=30;
+function snapVal(v){return Math.round(v/SNAP_GRID)*SNAP_GRID;}
 
 function builderTarget(){return BUILDER_LEVELS[builder.levelIndex];}
 function builderTargetGraph(){return fullGraphFor(builderTarget());}
@@ -1911,7 +1914,7 @@ function deleteEdge(id){
   builder.edges=builder.edges.filter(function(e){return e.id!==id;});
 }
 function redraw(){
-  let s='<defs><pattern id="grid" width="26" height="26" patternUnits="userSpaceOnUse"><path d="M26 0H0V26" fill="none" stroke="#e6eeea" stroke-width="1"/></pattern></defs>';
+  let s='<defs><pattern id="grid" width="30" height="30" patternUnits="userSpaceOnUse"><path d="M30 0H0V30" fill="none" stroke="#e2ebe7" stroke-width="1"/></pattern></defs>';
   s+='<rect width="760" height="500" fill="url(#grid)"/>';
   const badIds={};
   valenceIssues(builder.nodes,builder.edges).forEach(function(i){badIds[i.id]=true;});
@@ -1970,7 +1973,7 @@ function onPointerDown(ev){
     }
     const el=tool.split(":")[1];
     pushUndo();
-    builder.nodes.push({id:nodeUid++,el:el,x:p.x,y:p.y});
+    builder.nodes.push({id:nodeUid++,el:el,x:snapVal(p.x),y:snapVal(p.y)});
     builder.selected=nodeUid-1;
     save.stats.actions++;
     redraw();
@@ -2050,8 +2053,8 @@ function onPointerMove(ev){
     }
     const n=nodeById(builder.dragging);
     if(n){
-      n.x=p.x;
-      n.y=p.y;
+      n.x=snapVal(p.x);
+      n.y=snapVal(p.y);
     }
     redraw();
     return;
